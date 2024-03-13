@@ -46,6 +46,15 @@ async function run() {
         res.status(500).json({ error: 'Internal Server Error' });
       }
     });
+
+       // Get orders of customer
+       app.get('/orders/:email', async (req, res) =>{
+        const email = req.params.email
+        const query = { 'userEmail': email}
+        const result = await orderCollection.find(query).toArray()
+        console.log(result)
+        res.send(result)
+      })
     
 
 
