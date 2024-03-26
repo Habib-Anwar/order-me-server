@@ -1,4 +1,5 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
@@ -7,6 +8,7 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
 
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -35,17 +37,59 @@ async function run() {
         res.send(result)
     })
 
-    app.post('/orders', async (req, res) => {
-      try {
-        const order = req.body;
-        console.log(order);
-        const result = await orderCollection.insertOne(order);
-        res.json({ message: 'Order stored successfully', result });
-      } catch (error) {
-        console.error('Error storing order:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+  // totalPrice
+app.post('/orders', async (req, res) => {
+  try {
+      let orders = req.body;
+
+      // Ensure orders is an array, even if only one order is sent
+      if (!Array.isArray(orders)) {
+          orders = [orders];
       }
-    });
+
+      const totalPriceArray = [];
+
+      // Calculate total price for each order and add totalPrice field to each order
+      const ordersWithTotalPrice = orders.map(order => {
+          const totalPrice = order.quantity * order.price;
+          totalPriceArray.push(totalPrice);
+          return {
+              ...order,
+              totalPrice
+          };
+      });
+
+      // Insert all orders with totalPrice into the database
+      const result = await orderCollection.insertMany(ordersWithTotalPrice);
+
+      // Calculate total totalPrice
+      const totalPrice = totalPriceArray.reduce((acc, curr) => acc + curr, 0);
+
+      res.json({ message: 'Orders stored successfully', result, totalPrice });
+  } catch (error) {
+      console.error('Error storing orders:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
+        app.get('/orders', async(req, res) =>{
+        const result = await orderCollection.find().toArray();
+        res.send(result)
+    })
 
        // Get orders of customer
        app.get('/orders/:email', async (req, res) =>{
@@ -76,3 +120,24 @@ app.get('/', (req, res) =>{
 app.listen(port, () =>{
     console.log(`Order me is waiting for your order on port ${port}`);
 })
+
+
+
+
+
+// app.post('/orders', async (req, res) => {
+//   try {
+//     const order = req.body;
+//     console.log(order);
+//     const result = await orderCollection.insertOne(order);
+//     res.json({ message: 'Order stored successfully', result });
+//   } catch (error) {
+//     console.error('Error storing order:', error);
+//     res.status(500).json({ error: 'Internal Server Error' });
+//   }
+// });
+
+
+
+
+
