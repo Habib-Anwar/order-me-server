@@ -30,7 +30,8 @@ async function run() {
 
 
     const productCollection = client.db("orderDb").collection("product");
-    const orderCollection = client.db('orderDb').collection('orders')
+    const orderCollection = client.db('orderDb').collection('orders');
+    const adminCollection = client.db('orderDb').collection("admin");
 
     app.get('/product', async(req, res) =>{
         const result = await productCollection.find().toArray();
@@ -72,17 +73,6 @@ app.post('/orders', async (req, res) => {
   }
 });
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
 
 
@@ -99,7 +89,46 @@ app.post('/orders', async (req, res) => {
         console.log(result)
         res.send(result)
       })
-    
+
+      //Get customer order by Admin
+      app.post('/admin', async (req, res) => {
+  try {
+    const order = req.body;
+    console.log(order);
+    const result = await adminCollection.insertOne(order);
+    res.json({ message: 'Order stored successfully', result });
+  } catch (error) {
+    console.error('Error storing order:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+       app.get('/admin', async(req, res) =>{
+        const result = await adminCollection.find().toArray();
+        res.send(result)
+    })
+
+// DELETE request to /order route
+app.delete('/orders/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const query = { "userEmail": email };
+    const result = await orderCollection.deleteMany(query);
+    console.log(result);
+
+    if (result.deletedCount === 0) {
+      console.log(`No documents matched the query for email: ${email}`);
+      res.status(404).send('No documents matched the query');
+      return;
+    }
+
+    res.status(200).send(`Deleted ${result.deletedCount} documents successfully`);
+  } catch (error) {
+    console.error('Error deleting orders:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 
     // Send a ping to confirm a successful connection
